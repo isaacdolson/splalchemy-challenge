@@ -26,8 +26,8 @@ def home():
         "/api/v1.0/precipitation<br/>"
         "/api/v1.0/stations<br/>"
         "/api/v1.0/tobs<br/>"
-        "/api/v1.0/<start_date><br/>"
-        "/api/v1.0/<start_date>/<end_date><br/>"
+        "/api/v1.0/start-date<br/>"
+        "/api/v1.0/start-date/end-date<br/>"
         "Enter Date in year-month-day format, two digits each."
     )
 
@@ -59,31 +59,36 @@ def tobs():
     #shouldn't just hardcode...
     yearAgo = dt.datetime.strftime(dt.date(2016, 11,1)-dt.timedelta(days=365), '%Y-%m-%d')
     # resulting_query = session.query(Measurement.tobs, Measurement.date)
-    for x in session.query(Measurement).filter(Measurement.date > yearAgo):
-        # try:
-        #     if (dt.datetime.strptime(str(x.date)[2:-3], '%Y-%m-%d') > yearAgo):
+    for x in session.query(Measurement).filter(Measurement.date >= yearAgo).filter(Measurement.date <= '2016-11-1').limit(365):
+
         temp_list.append(x.tobs)
-        # except:
-            #does this count
+       
     return jsonify(temp_list)
     # query for the dates and temperature observations from a year from the last data point.
 # Return a JSON list of Temperature Observations (tobs) for the previous year.
 
 @app.route("/api/v1.0/<start>")
 def justStart(start):
-    start_date = dt.datetime.strptime(start, '%Y-%m-%d')
+    #I hope this doesn't need to be in here, but I guess I am feeling paranoid about it.
+    if start == "start-date":
+        return "Please enter a date in the form Year-Month-Day, with 4 digits for the year, and two for the month and day, ex. 2016-11-1"
+    # start_date = dt.datetime.strptime(start, '%Y-%m-%d')
     return jsonify(session.query(func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs))\
-        .filter(Measurement.date >= start_date).all())
+        .filter(Measurement.date >= start).all())
     # Return a JSON list of the minimum temperature, the average temperature, and the max temperature for a given start or start-end range.
 
 # When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date.
 
 @app.route("/api/v1.0/<start>/<end>")
 def startToEnd(start, end):
-    start_date = dt.datetime.strptime(start, '%Y-%m-%d')
-    end_date = dt.datetime.strptime(end, '%Y-%m-%d')
+    #I hope this doesn't need to be in here, but I guess I am feeling paranoid about it.
+    if start == "start-date" or end == "end-date":
+        return "Please enter a date in the form Year-Month-Day, with 4 digits for the year, and two for the month and day, ex. 2016-11-1"
+
+    # start_date = dt.datetime.strftime(start, '%Y-%m-%d')
+    # end_date = dt.datetime.strftime(end, '%Y-%m-%d')
     return jsonify(session.query(func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs))\
-        .filter(Measurement.date >= start_date).filter(Measurement.date <= end_date).all())
+        .filter(Measurement.date >= start).filter(Measurement.date <= end).all())
     # When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive.
 
 if __name__ == '__main__':
